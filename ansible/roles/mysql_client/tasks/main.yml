@@ -1,0 +1,10 @@
+---
+- name: Install MySQL client (needed to import the dump and run wp db checks)
+  apt:
+    name: mysql-client
+    state: present
+
+- name: Install AWS CLI (to pull the dump from S3)
+  apt:
+    name: awscli
+    state: present

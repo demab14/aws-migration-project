@@ -1,0 +1,108 @@
+---
+# ---------------- Pull DB credentials from Secrets Manager ----------------
+- name: Fetch DB credentials + RDS endpoint from Secrets Manager
+  command: >
+    aws secretsmanager get-secret-value
+    --secret-id {{ db_secret_id }}
+    --region {{ aws_region | default('eu-west-2') }}
+    --query SecretString --output text
+  register: secret_raw
+  changed_when: false
+  no_log: true
+
+- name: Parse secret JSON into facts
+  set_fact:
+    db_username: "{{ (secret_raw.stdout | from_json).username }}"
+    db_password: "{{ (secret_raw.stdout | from_json).password }}"
+    rds_endpoint: "{{ (secret_raw.stdout | from_json).host }}"
+    db_name: "{{ (secret_raw.stdout | from_json).dbname }}"
+  no_log: true
+
+- name: Download latest WordPress
+  get_url:
+    url: https://wordpress.org/latest.tar.gz
+    dest: /tmp/wordpress.tar.gz
+
+- name: Extract WordPress
+  unarchive:
+    src: /tmp/wordpress.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Copy WordPress files into the Apache webroot
+  copy:
+    src: /tmp/wordpress/
+    dest: /var/www/html/
+    remote_src: yes
+
+# ---------------- Permissions ----------------
+- name: Set ownership of webroot to www-data
+  file:
+    path: /var/www/html
+    owner: www-data
+    group: www-data
+    recurse: yes
+
+- name: Set directory permissions
+  shell: find /var/www/html -type d -exec chmod 755 {} \;
+  changed_when: false
+
+- name: Set file permissions
+  shell: find /var/www/html -type f -exec chmod 644 {} \;
+  changed_when: false
+
+# ---------------- Database migration: S3 -> EC2 -> RDS ----------------
+- name: Pull the exported MySQL dump down from S3 onto the EC2 box
+  command: >
+    aws s3 cp s3://{{ migration_bucket }}/{{ db_dump_filename }}
+    /tmp/{{ db_dump_filename }}
+    --region {{ aws_region | default('eu-west-2') }}
+  args:
+    creates: "/tmp/{{ db_dump_filename }}"
+
+- name: Import the dump into RDS from the EC2 box
+  shell: >
+    mysql -h {{ rds_endpoint }} -u {{ db_username }}
+    {{ db_name }} < /tmp/{{ db_dump_filename }}
+  args:
+    executable: /bin/bash
+  environment:
+    MYSQL_PWD: "{{ db_password }}"
+  register: db_import
+  changed_when: db_import.rc == 0
+  no_log: true
+
+- name: Remove the dump file from the EC2 box once imported
+  file:
+    path: "/tmp/{{ db_dump_filename }}"
+    state: absent
+
+# ---------------- wp-config.php ----------------
+- name: Generate wp-config.php from template, pointed at the RDS endpoint
+  template:
+    src: wp-config.php.j2
+    dest: /var/www/html/wp-config.php
+    owner: www-data
+    group: www-data
+    mode: "0640"
+  notify: restart apache
+
+# ---------------- Restart + smoke test ----------------
+- name: Restart Apache to pick up config
+  systemd:
+    name: apache2
+    state: restarted
+
+- name: Verify WordPress responds locally on the instance
+  uri:
+    url: "http://localhost/"
+    status_code: 200
+    return_content: yes
+  register: wp_check
+  retries: 5
+  delay: 5
+  until: wp_check.status == 200
+
+- name: Confirm WordPress install page/site is reachable
+  debug:
+    msg: "WordPress responded with HTTP {{ wp_check.status }} on {{ inventory_hostname }}"

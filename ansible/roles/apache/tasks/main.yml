@@ -1,0 +1,17 @@
+---
+- name: Install Apache
+  apt:
+    name: apache2
+    state: present
+
+- name: Enable Apache rewrite module (needed for WordPress permalinks)
+  apache2_module:
+    name: rewrite
+    state: present
+  notify: restart apache
+
+- name: Ensure Apache is enabled and running
+  systemd:
+    name: apache2
+    enabled: yes
+    state: started

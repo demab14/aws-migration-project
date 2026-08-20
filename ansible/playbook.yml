@@ -1,0 +1,27 @@
+---
+- name: Deploy WordPress onto the Terraform-provisioned EC2 instance
+  hosts: role_wordpress
+  become: yes
+  vars:
+    migration_bucket: "{{ lookup('env', 'MIGRATION_BUCKET') }}"
+    db_dump_filename: "wordpress_dump.sql"
+    # db_secret_id comes from Terraform's db_secret_id output — pass it in with
+    # `-e db_secret_id=$(terraform -chdir=terraform/environments/dev output -raw db_secret_id)`
+    db_secret_id: "{{ db_secret_id }}"
+    wp_auth_keys: |
+      // Replace with unique values from https://api.wordpress.org/secret-key/1.1/salt/
+      define( 'AUTH_KEY',         'put-a-unique-phrase-here' );
+      define( 'SECURE_AUTH_KEY',  'put-a-unique-phrase-here' );
+      define( 'LOGGED_IN_KEY',    'put-a-unique-phrase-here' );
+      define( 'NONCE_KEY',        'put-a-unique-phrase-here' );
+      define( 'AUTH_SALT',        'put-a-unique-phrase-here' );
+      define( 'SECURE_AUTH_SALT', 'put-a-unique-phrase-here' );
+      define( 'LOGGED_IN_SALT',   'put-a-unique-phrase-here' );
+      define( 'NONCE_SALT',       'put-a-unique-phrase-here' );
+
+  roles:
+    - common
+    - apache
+    - php
+    - mysql_client
+    - wordpress

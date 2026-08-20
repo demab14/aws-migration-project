@@ -1,0 +1,13 @@
+plugin: amazon.aws.aws_ec2
+regions:
+  - eu-west-2
+filters:
+  tag:Role: wordpress
+  instance-state-name: running
+keyed_groups:
+  - key: tags.Role
+    prefix: role
+hostnames:
+  - public-ip-address
+compose:
+  ansible_host: public_ip_address

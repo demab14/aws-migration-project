@@ -1,0 +1,29 @@
+#############################################
+# AWS REGION
+#############################################
+aws_region = "us-east-1"
+
+#############################################
+# NETWORKING
+#############################################
+vpc_cidr            = "10.0.0.0/16"
+public_subnet_cidr  = "10.0.1.0/24"
+private_subnet_cidr = "10.0.2.0/24"
+
+#############################################
+# EC2 CONFIGURATION
+#############################################
+instance_type = "t2.micro"
+key_name      = "CHANGE_ME_KEYPAIR"
+
+#############################################
+# DATABASE CONFIGURATION
+#############################################
+db_name     = "company_db"
+db_username = "admin"
+db_password = "CHANGE_ME_PASSWORD"
+
+#############################################
+# S3 BUCKET (MUST BE GLOBALLY UNIQUE)
+#############################################
+bucket_name = "CHANGE_ME_UNIQUE_BUCKET_NAME"
