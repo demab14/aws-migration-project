@@ -4,14 +4,18 @@ on:
   pull_request:
     paths:
       - "terraform/**"
+      - ".github/workflows/terraform-plan.yml"
   push:
     branches: [main]
     paths:
       - "terraform/**"
+      - ".github/workflows/terraform-plan.yml"
+
 permissions:
   contents: read
   pull-requests: write
   id-token: write
+
 env:
   TF_WORKING_DIR: terraform/environments/dev
 
@@ -29,8 +33,6 @@ jobs:
         with:
           terraform_version: "1.7.5"
 
-      # Uses OIDC federation instead of long-lived AWS access keys in CI secrets.
-      # Configure this role in AWS IAM with a trust policy for your GitHub repo.
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
