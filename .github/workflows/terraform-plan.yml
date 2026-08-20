@@ -8,11 +8,10 @@ on:
     branches: [main]
     paths:
       - "terraform/**"
-
 permissions:
   contents: read
   pull-requests: write
-
+  id-token: write
 env:
   TF_WORKING_DIR: terraform/environments/dev
 
