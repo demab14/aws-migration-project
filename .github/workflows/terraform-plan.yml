@@ -45,9 +45,18 @@ jobs:
         run: terraform fmt -check -recursive
         continue-on-error: true
 
+      - name: Override backend to local for CI (plan-only, no real state access needed)
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          cat > backend_override.tf << 'OVERRIDE_EOF'
+          terraform {
+            backend "local" {}
+          }
+          OVERRIDE_EOF
+
       - name: Terraform init
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform init -backend=false
+        run: terraform init
 
       - name: Terraform validate
         working-directory: ${{ env.TF_WORKING_DIR }}
