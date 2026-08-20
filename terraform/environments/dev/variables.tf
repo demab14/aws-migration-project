@@ -50,3 +50,4 @@ variable "db_username" {
 
 # No db_password variable anymore — the secrets module generates a random
 # password and stores it (along with the RDS endpoint) in Secrets Manager.
+
