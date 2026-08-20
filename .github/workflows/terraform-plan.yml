@@ -56,6 +56,10 @@ jobs:
       - name: Terraform plan
         id: plan
         working-directory: ${{ env.TF_WORKING_DIR }}
+        env:
+          TF_VAR_admin_cidr: "203.0.113.0/32"
+          TF_VAR_migration_bucket_name: "ci-plan-placeholder-bucket"
+          TF_VAR_key_name: "placeholder-key"
         run: terraform plan -no-color -input=false
         continue-on-error: true
 
