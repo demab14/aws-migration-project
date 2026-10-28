@@ -62,7 +62,7 @@ resource "aws_lb_target_group" "wordpress" {
 resource "aws_lb_target_group_attachment" "wordpress" {
   target_group_arn = aws_lb_target_group.wordpress.arn
   target_id        = aws_instance.wordpress.id
-  port              = 80
+  port             = 80
 }
 
 resource "aws_lb_listener" "http" {
