@@ -39,35 +39,6 @@ flowchart LR
 
 Security groups are chained: internet → ALB (80/443) → EC2 (80 only) → RDS (3306 only). SSH is restricted to a single admin CIDR.
 
-- **VPC** with public and private subnets across 2 AZs
-- **EC2** (WordPress/Apache/PHP) in a public subnet, behind an **Application Load Balancer**
-- **RDS MySQL** in private subnets, reachable only from the EC2 security group
-- **NAT Gateway** for outbound internet access from private subnets
-- **S3** bucket as the transfer point for the database dump
-- **Secrets Manager** holds auto-generated DB credentials; nothing sensitive lives in tfvars
-- **IAM role** on EC2, scoped to read only the S3 dump and the DB secret
-- **CloudWatch alarms** (EC2 CPU, RDS free storage) notifying an **SNS** topic
-- **GitHub Actions** runs `terraform fmt`, `validate` and `plan` on every PR, authenticating via OIDC
-
-Security groups are chained: internet → ALB (80/443) → EC2 (80 only) → RDS (3306 only). SSH is restricted to a single admin CIDR.
-
-## Repo structure
-
-```
-terraform/
-  modules/            vpc, security-groups, s3, iam, rds, ec2, secrets, monitoring
-  environments/dev/   root config wiring the modules together
-ansible/
-  inventory/          dynamic AWS EC2 inventory (aws_ec2.yml)
-  roles/              common, apache, php, mysql_client, wordpress
-  playbook.yml
-migration/
-  db-export.sh        run on the legacy server; uploads the dump to S3
-  db-import.sh        manual S3 → RDS import (Ansible does this automatically)
-.github/workflows/
-  terraform-plan.yml  fmt / validate / plan on every PR touching terraform/
-```
-
 ## Repo structure
 
 ```
